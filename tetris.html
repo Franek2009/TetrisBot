@@ -1,509 +1,893 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tetris-Style Falling Blocks</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8" />
+  <title>AI Tetris Pro</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background-color: #0a0a0a;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            color: #fff;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            overflow-x: hidden;
-        }
+    .container {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
 
-        .container {
-            max-width: 1000px;
-            width: 100%;
-            text-align: center;
-        }
+    canvas {
+      background-color: #121212;
+      border: 2px solid #333;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+    }
 
-        header {
-            margin-bottom: 25px;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
+    .panel {
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 10px;
+      width: 240px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    }
 
-        h1 {
-            font-size: 2.8rem;
-            margin-bottom: 10px;
-            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
+    h2 {
+      margin-top: 0;
+      color: #4fc3f7;
+      text-align: center;
+      font-size: 22px;
+    }
 
-        .subtitle {
-            font-size: 1.2rem;
-            opacity: 0.8;
-            margin-bottom: 20px;
-        }
+    .score-display {
+      font-size: 26px;
+      font-weight: bold;
+      text-align: center;
+      margin: 12px 0;
+      color: #69f0ae;
+    }
 
-        .game-container {
-            position: relative;
-            width: 100%;
-            max-width: 500px;
-            height: 600px;
-            margin: 0 auto 30px;
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            overflow: hidden;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-        }
+    label {
+      display: block;
+      margin: 14px 0 6px;
+      font-weight: 500;
+      color: #aaa;
+    }
 
-        #game-canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
+    input[type="range"] {
+      width: 100%;
+      margin-bottom: 10px;
+    }
 
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 12px;
+      background: #2a2a2a;
+      color: #ddd;
+      border: 1px solid #444;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
 
-        button {
-            padding: 12px 25px;
-            font-size: 1rem;
-            font-weight: 600;
-            background: linear-gradient(45deg, #ff6b6b, #ffa502);
-            color: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
+    button:hover {
+      background: #3a3a3a;
+      color: #fff;
+    }
 
-        button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-        }
+    .next-piece-label {
+      margin-top: 25px;
+      font-weight: 500;
+      color: #bbb;
+    }
 
-        button:active {
-            transform: translateY(1px);
-        }
+    .stats-panel {
+      margin-top: 20px;
+      padding: 12px;
+      background: #222;
+      border-radius: 5px;
+      font-size: 14px;
+    }
 
-        #pause-btn {
-            background: linear-gradient(45deg, #4ecdc4, #1a936f);
-        }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 6px 0;
+    }
 
-        #reset-btn {
-            background: linear-gradient(45deg, #ff9a9e, #fad0c4);
-            color: #333;
-        }
+    .highlight {
+      color: #ffeb3b;
+      font-weight: bold;
+    }
 
-        .stats {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-
-        .stat-box {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 15px 25px;
-            border-radius: 10px;
-            min-width: 120px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #4ecdc4;
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
-
-        .instructions {
-            max-width: 600px;
-            margin: 30px auto 0;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            font-size: 0.95rem;
-            line-height: 1.6;
-        }
-
-        .block-preview {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .preview-block {
-            width: 25px;
-            height: 25px;
-            border-radius: 3px;
-        }
-
-        @media (max-width: 600px) {
-            h1 {
-                font-size: 2rem;
-            }
-            
-            .game-container {
-                height: 500px;
-            }
-            
-            .controls {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            button {
-                width: 80%;
-            }
-        }
-
-        /* Animation keyframes */
-        @keyframes fall {
-            from {
-                transform: translateY(-100px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        @keyframes rotate {
-            from {
-                transform: rotate(0deg);
-            }
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-    </style>
+    .ai-thinking {
+      position: absolute;
+      background: rgba(0,0,0,0.85);
+      color: #4fc3f7;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 14px;
+      pointer-events: none;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Tetris-Style Falling Blocks</h1>
-            <p class="subtitle">Watch colorful blocks fall and stack in this mesmerizing animation</p>
-        </header>
 
-        <div class="game-container">
-            <canvas id="game-canvas"></canvas>
-        </div>
+<div class="container">
+  <canvas id="boardCanvas" width="300" height="600"></canvas>
+  
+  <div class="panel">
+    <h2>AI TETRIS PRO</h2>
+    <div class="score-display">Score: <span id="scoreValue">0</span></div>
+    
+    <label for="speedSlider">Game Speed (ms)</label>
+    <input type="range" id="speedSlider" min="50" max="1000" value="500">
 
-        <div class="controls">
-            <button id="start-btn">Start Animation</button>
-            <button id="pause-btn">Pause</button>
-            <button id="reset-btn">Reset</button>
-        </div>
+    <label for="multiplierSlider">Speed Multiplier</label>
+    <input type="range" id="multiplierSlider" min="1" max="100" value="1">
 
-        <div class="stats">
-            <div class="stat-box">
-                <div class="stat-value" id="score">0</div>
-                <div class="stat-label">Blocks Dropped</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-value" id="speed">1x</div>
-                <div class="stat-label">Animation Speed</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-value" id="stacked">0</div>
-                <div class="stat-label">Stacked Blocks</div>
-            </div>
-        </div>
+    <button id="autoPlayBtn">AUTO PLAY: ON</button>
+    <button id="analysisBtn">SHOW ANALYSIS: OFF</button>
+    <button id="restartBtn">RESTART GAME</button>
 
-        <div class="instructions">
-            <p>This animation simulates Tetris-style falling blocks with smooth physics-based movement. 
-               Blocks spawn at random positions with different shapes and colors, then fall with realistic gravity.</p>
-            <div class="block-preview">
-                <div class="preview-block" style="background-color: #FF6B6B;"></div>
-                <div class="preview-block" style="background-color: #4ECDC4;"></div>
-                <div class="preview-block" style="background-color: #FFE66D;"></div>
-                <div class="preview-block" style="background-color: #FF9A9E;"></div>
-                <div class="preview-block" style="background-color: #6A0572;"></div>
-            </div>
-        </div>
+    <div class="next-piece-label">NEXT PIECE:</div>
+    <canvas id="nextCanvas" width="120" height="120"></canvas>
+
+    <div class="stats-panel">
+      <div class="stat-row">
+        <span>Pieces Survived:</span>
+        <span id="piecesSurvived" class="highlight">0</span>
+      </div>
+      <div class="stat-row">
+        <span>Avg Lines/Piece:</span>
+        <span id="avgLines" class="highlight">0.0</span>
+      </div>
+      <div class="stat-row">
+        <span>Time Alive:</span>
+        <span id="timeAlive" class="highlight">0s</span>
+      </div>
     </div>
+  </div>
+</div>
 
-    <script>
-        // Canvas setup
-        const canvas = document.getElementById('game-canvas');
-        const ctx = canvas.getContext('2d');
-        
-        // Set canvas dimensions to match container
-        function resizeCanvas() {
-            const container = canvas.parentElement;
-            canvas.width = container.clientWidth;
-            canvas.height = container.clientHeight;
+<script>
+// ==================== CONSTANTS ====================
+const COLS = 10;
+const ROWS = 20;
+const BLOCK_SIZE = 30;
+
+const COLORS = {
+  I: '#00BCD4',
+  O: '#FFEB3B',
+  T: '#9C27B0',
+  S: '#4CAF50',
+  Z: '#F44336',
+  J: '#2196F3',
+  L: '#FF9800'
+};
+
+const SHAPES = {
+  I: [
+    [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]],
+    [[0,0,1,0], [0,0,1,0], [0,0,1,0], [0,0,1,0]],
+    [[0,0,0,0], [0,0,0,0], [1,1,1,1], [0,0,0,0]],
+    [[0,1,0,0], [0,1,0,0], [0,1,0,0], [0,1,0,0]]
+  ],
+  O: [
+    [[0,0,0,0], [0,1,1,0], [0,1,1,0], [0,0,0,0]]
+  ],
+  T: [
+    [[0,0,0,0], [0,1,0,0], [1,1,1,0], [0,0,0,0]],
+    [[0,0,0,0], [0,1,0,0], [0,1,1,0], [0,1,0,0]],
+    [[0,0,0,0], [0,0,0,0], [1,1,1,0], [0,1,0,0]],
+    [[0,0,0,0], [0,1,0,0], [1,1,0,0], [0,1,0,0]]
+  ],
+  S: [
+    [[0,0,0,0], [0,0,1,1], [0,1,1,0], [0,0,0,0]],
+    [[0,0,0,0], [0,1,0,0], [0,0,1,1], [0,0,1,0]],
+    [[0,0,0,0], [0,0,0,0], [0,1,1,0], [1,1,0,0]],
+    [[0,0,0,0], [0,1,0,0], [1,1,0,0], [0,1,0,0]]
+  ],
+  Z: [
+    [[0,0,0,0], [1,1,0,0], [0,1,1,0], [0,0,0,0]],
+    [[0,0,0,0], [0,0,1,0], [0,1,1,0], [0,1,0,0]],
+    [[0,0,0,0], [0,0,0,0], [1,1,0,0], [0,1,1,0]],
+    [[0,0,0,0], [0,1,0,0], [0,1,1,0], [0,0,1,0]]
+  ],
+  J: [
+    [[0,0,0,0], [1,0,0,0], [1,1,1,0], [0,0,0,0]],
+    [[0,0,0,0], [0,1,1,0], [0,1,0,0], [0,1,0,0]],
+    [[0,0,0,0], [0,0,0,0], [1,1,1,0], [0,0,1,0]],
+    [[0,0,0,0], [0,1,0,0], [0,1,0,0], [1,1,0,0]]
+  ],
+  L: [
+    [[0,0,0,0], [0,0,1,0], [1,1,1,0], [0,0,0,0]],
+    [[0,0,0,0], [0,1,0,0], [0,1,0,0], [0,1,1,0]],
+    [[0,0,0,0], [0,0,0,0], [1,1,1,0], [1,0,0,0]],
+    [[0,0,0,0], [1,1,0,0], [0,1,0,0], [0,1,0,0]]
+  ]
+};
+
+// ==================== UTILITY FUNCTIONS ====================
+function cloneBoard(board) {
+  return board.map(row => [...row]);
+}
+
+// ==================== PIECE BAG SYSTEM ====================
+class PieceBag {
+  constructor() {
+    this.bag = [];
+    this.refill();
+  }
+
+  refill() {
+    const types = Object.keys(SHAPES);
+    // Fisher-Yates shuffle
+    for (let i = types.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [types[i], types[j]] = [types[j], types[i]];
+    }
+    this.bag = types;
+  }
+
+  getNext() {
+    if (this.bag.length === 0) this.refill();
+    return new Piece(this.bag.pop());
+  }
+}
+
+// ==================== CLASSES ====================
+class Piece {
+  constructor(type) {
+    this.type = type;
+    this.shape = SHAPES[type];
+    this.color = COLORS[type];
+    this.rotation = 0;
+    this.x = Math.floor(COLS / 2) - 2;
+    this.y = 0;
+  }
+
+  getWidth() {
+    return this.getCurrentShape()[0].length;
+  }
+
+  getHeight() {
+    return this.getCurrentShape().length;
+  }
+
+  getCurrentShape() {
+    return this.shape[this.rotation % this.shape.length];
+  }
+
+  clone() {
+    const p = new Piece(this.type);
+    p.rotation = this.rotation;
+    p.x = this.x;
+    p.y = this.y;
+    return p;
+  }
+
+  rotate() {
+    this.rotation = (this.rotation + 1) % this.shape.length;
+  }
+}
+
+class Board {
+  constructor() {
+    this.reset();
+  }
+
+  reset() {
+    this.grid = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+    this.score = 0;
+    this.gameOver = false;
+    this.linesClearedTotal = 0;
+    this.piecesPlaced = 0;
+    this.startTime = Date.now();
+  }
+
+  isEmpty(x, y) {
+    return this.grid[y][x] === 0 || this.grid[y][x] === 'ghost';
+  }
+
+  isValid(piece, offsetX = 0, offsetY = 0, rotation = piece.rotation) {
+    const shape = piece.shape[rotation % piece.shape.length];
+    for (let y = 0; y < shape.length; y++) {
+      for (let x = 0; x < shape[y].length; x++) {
+        if (!shape[y][x]) continue;
+        const newX = piece.x + x + offsetX;
+        const newY = piece.y + y + offsetY;
+        if (
+          newX < 0 || 
+          newX >= COLS || 
+          newY >= ROWS ||
+          (newY >= 0 && !this.isEmpty(newX, newY))
+        ) {
+          return false;
         }
-        
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-        
-        // Game state
-        let gameState = {
-            isRunning: false,
-            isPaused: false,
-            score: 0,
-            stackedBlocks: 0,
-            speed: 1,
-            blocks: [],
-            lastTime: 0,
-            dropInterval: 1000, // milliseconds
-            lastDropTime: 0
-        };
-        
-        // Block types with different shapes and colors
-        const blockTypes = [
-            { shape: 'square', color: '#FF6B6B' },
-            { shape: 'rectangle', color: '#4ECDC4' },
-            { shape: 't-shape', color: '#FFE66D' },
-            { shape: 'l-shape', color: '#FF9A9E' },
-            { shape: 'z-shape', color: '#6A0572' },
-            { shape: 's-shape', color: '#1A936F' },
-            { shape: 'i-shape', color: '#FFA502' }
-        ];
-        
-        // Block class
-        class Block {
-            constructor(x, y, type) {
-                this.x = x;
-                this.y = y;
-                this.type = type;
-                this.color = type.color;
-                this.size = Math.random() * 30 + 20; // Random size between 20-50px
-                this.rotation = Math.random() * 360;
-                this.rotationSpeed = (Math.random() - 0.5) * 2;
-                this.velocityY = 0;
-                this.gravity = 0.2;
-                this.bounceFactor = 0.7;
-                this.landed = false;
-                this.landTime = 0;
+      }
+    }
+    return true;
+  }
+
+  lockPiece(piece) {
+    const shape = piece.getCurrentShape();
+    for (let y = 0; y < shape.length; y++) {
+      for (let x = 0; x < shape[y].length; x++) {
+        if (!shape[y][x]) continue;
+        const boardY = piece.y + y;
+        const boardX = piece.x + x;
+        if (boardY < 0) {
+          this.gameOver = true;
+          return;
+        }
+        this.grid[boardY][boardX] = piece.color;
+      }
+    }
+    this.piecesPlaced++;
+    this.clearLines();
+  }
+
+  clearLines() {
+    let lines = 0;
+    for (let y = ROWS - 1; y >= 0; y--) {
+      if (this.grid[y].every(cell => cell !== 0)) {
+        this.grid.splice(y, 1);
+        this.grid.unshift(Array(COLS).fill(0));
+        lines++;
+        y++;
+      }
+    }
+    this.linesClearedTotal += lines;
+    switch(lines) {
+      case 1: this.score += 100; break;
+      case 2: this.score += 300; break;
+      case 3: this.score += 500; break;
+      case 4: this.score += 800; break;
+    }
+  }
+
+  getStats() {
+    const timeAlive = Math.floor((Date.now() - this.startTime) / 1000);
+    const avgLines = this.piecesPlaced > 0 ? (this.linesClearedTotal / this.piecesPlaced).toFixed(1) : '0.0';
+    return { piecesSurvived: this.piecesPlaced, avgLines, timeAlive };
+  }
+}
+
+// ==================== AI EVALUATION ====================
+const AI = {
+  evaluateBoard(grid) {
+    const heights = Array(COLS).fill(0);
+    const holes = Array(COLS).fill(0);
+    let aggregateHeight = 0;
+    let bumpiness = 0;
+    let linesCleared = 0;
+    let wellDepth = 0;
+    let rowTransitions = 0;
+    let colTransitions = 0;
+
+    // Calculate heights and holes
+    for (let x = 0; x < COLS; x++) {
+      let foundBlock = false;
+      for (let y = 0; y < ROWS; y++) {
+        if (grid[y][x] !== 0) {
+          if (!foundBlock) {
+            heights[x] = ROWS - y;
+            foundBlock = true;
+          }
+        } else if (foundBlock) {
+          holes[x]++;
+        }
+      }
+    }
+
+    aggregateHeight = heights.reduce((sum, h) => sum + h, 0);
+
+    // Bumpiness
+    for (let i = 0; i < COLS - 1; i++) {
+      bumpiness += Math.abs(heights[i] - heights[i + 1]);
+    }
+
+    // Well depth (simplified)
+    for (let x = 1; x < COLS - 1; x++) {
+      if (heights[x] < heights[x-1] && heights[x] < heights[x+1]) {
+        wellDepth += Math.min(heights[x-1], heights[x+1]) - heights[x];
+      }
+    }
+
+    // Transitions
+    for (let y = 0; y < ROWS; y++) {
+      let lastCell = 1; // Treat walls as filled
+      for (let x = 0; x < COLS; x++) {
+        const currentCell = grid[y][x] === 0 ? 1 : 0;
+        if (currentCell !== lastCell) rowTransitions++;
+        lastCell = currentCell;
+      }
+      if (lastCell === 1) rowTransitions++; // Right wall transition
+    }
+
+    for (let x = 0; x < COLS; x++) {
+      let lastCell = 1;
+      for (let y = 0; y < ROWS; y++) {
+        const currentCell = grid[y][x] === 0 ? 1 : 0;
+        if (currentCell !== lastCell) colTransitions++;
+        lastCell = currentCell;
+      }
+    }
+
+    // Lines cleared in simulated board
+    for (let y = 0; y < ROWS; y++) {
+      if (grid[y].every(cell => cell !== 0)) linesCleared++;
+    }
+
+    return (
+      -0.5 * aggregateHeight +
+       1.2 * linesCleared -
+       0.8 * holes.reduce((sum, h) => sum + h, 0) -
+       0.3 * bumpiness -
+       0.2 * wellDepth -
+       0.2 * rowTransitions -
+       0.2 * colTransitions
+    );
+  },
+
+  findBestMove(board, piece) {
+    let bestScore = -Infinity;
+    let bestMove = null;
+    const evaluations = [];
+
+    for (let rotation = 0; rotation < piece.shape.length; rotation++) {
+      const testPiece = piece.clone();
+      testPiece.rotation = rotation;
+
+      for (let dx = -piece.getWidth(); dx < COLS; dx++) {
+        const tempPiece = testPiece.clone();
+        tempPiece.x = dx;
+
+        if (!board.isValid(tempPiece)) continue;
+
+        // Drop to bottom
+        while (board.isValid(tempPiece, 0, 1)) {
+          tempPiece.y++;
+        }
+
+        // Simulate placement
+        const simulated = cloneBoard(board.grid);
+        const shape = tempPiece.getCurrentShape();
+        for (let y = 0; y < shape.length; y++) {
+          for (let x = 0; x < shape[y].length; x++) {
+            if (shape[y][x]) {
+              const boardY = tempPiece.y + y;
+              const boardX = tempPiece.x + x;
+              if (boardY >= 0 && boardY < ROWS && boardX >= 0 && boardX < COLS) {
+                simulated[boardY][boardX] = tempPiece.color;
+              }
             }
-            
-            update(deltaTime) {
-                if (!this.landed) {
-                    // Apply gravity
-                    this.velocityY += this.gravity * (deltaTime / 16);
-                    this.y += this.velocityY * (deltaTime / 16);
-                    
-                    // Rotate block
-                    this.rotation += this.rotationSpeed * (deltaTime / 16);
-                    
-                    // Check if block has landed
-                    if (this.y + this.size > canvas.height) {
-                        this.y = canvas.height - this.size;
-                        this.velocityY *= -this.bounceFactor;
-                        
-                        // If bounce is small enough, consider it landed
-                        if (Math.abs(this.velocityY) < 0.5) {
-                            this.landed = true;
-                            this.landTime = Date.now();
-                            gameState.stackedBlocks++;
-                            updateStats();
-                        }
-                    }
-                } else {
-                    // Fade out after landing
-                    const timeSinceLanding = Date.now() - this.landTime;
-                    if (timeSinceLanding > 3000) {
-                        this.alpha = Math.max(0, 1 - (timeSinceLanding - 3000) / 1000);
-                    }
-                }
+          }
+        }
+
+        const score = this.evaluateBoard(simulated);
+        evaluations.push({
+          piece: tempPiece.clone(),
+          score: score
+        });
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestMove = {
+            rotations: rotation,
+            dx: dx - piece.x,
+            finalY: tempPiece.y,
+            score: score
+          };
+        }
+      }
+    }
+
+    return { bestMove, evaluations };
+  }
+};
+
+// ==================== ANIMATION CONTROLLER ====================
+class AnimationController {
+  constructor() {
+    this.queue = [];
+    this.accumulator = 0;
+    this.stepTime = 1000/60; // 60fps
+  }
+
+  add(action, duration) {
+    this.queue.push({
+      action,
+      duration,
+      elapsed: 0
+    });
+  }
+
+  update(deltaTime) {
+    this.accumulator += deltaTime;
+    let processed = false;
+
+    while (this.accumulator >= this.stepTime && this.queue.length > 0) {
+      const current = this.queue[0];
+      current.elapsed += this.stepTime;
+      
+      if (current.elapsed >= current.duration) {
+        current.action();
+        this.queue.shift();
+        processed = true;
+      }
+      
+      this.accumulator -= this.stepTime;
+    }
+
+    return processed;
+  }
+
+  clear() {
+    this.queue = [];
+    this.accumulator = 0;
+  }
+
+  isActive() {
+    return this.queue.length > 0;
+  }
+}
+
+// ==================== GAME CONTROLLER ====================
+class GameController {
+  constructor() {
+    this.board = new Board();
+    this.pieceBag = new PieceBag();
+    this.currentPiece = null;
+    this.nextPiece = this.pieceBag.getNext();
+    this.animation = new AnimationController();
+    this.isAutoPlaying = true;
+    this.showAnalysis = false;
+    this.speed = 500;
+    this.multiplier = 1;
+    this.lastTime = 0;
+    this.accumulator = 0;
+    this.evaluations = [];
+    this.bestMoveInfo = null;
+    this.isThinking = false;
+    this.thinkingStartTime = 0;
+
+    this.canvas = document.getElementById('boardCanvas');
+    this.ctx = this.canvas.getContext('2d');
+    this.nextCanvas = document.getElementById('nextCanvas');
+    this.nextCtx = this.nextCanvas.getContext('2d');
+
+    this.setupEventListeners();
+    this.spawnPiece();
+    requestAnimationFrame(this.loop.bind(this));
+  }
+
+  setupEventListeners() {
+    document.getElementById('speedSlider').addEventListener('input', e => {
+      this.speed = parseInt(e.target.value);
+    });
+
+    document.getElementById('multiplierSlider').addEventListener('input', e => {
+      this.multiplier = parseInt(e.target.value);
+    });
+
+    document.getElementById('autoPlayBtn').addEventListener('click', () => {
+      this.isAutoPlaying = !this.isAutoPlaying;
+      document.getElementById('autoPlayBtn').textContent = 
+        `AUTO PLAY: ${this.isAutoPlaying ? 'ON' : 'OFF'}`;
+    });
+
+    document.getElementById('analysisBtn').addEventListener('click', () => {
+      this.showAnalysis = !this.showAnalysis;
+      document.getElementById('analysisBtn').textContent = 
+        `SHOW ANALYSIS: ${this.showAnalysis ? 'ON' : 'OFF'}`;
+    });
+
+    document.getElementById('restartBtn').addEventListener('click', () => {
+      this.restart();
+    });
+  }
+
+  spawnPiece() {
+    this.currentPiece = this.nextPiece;
+    this.nextPiece = this.pieceBag.getNext();
+
+    if (!this.board.isValid(this.currentPiece)) {
+      this.board.gameOver = true;
+    }
+
+    if (this.isAutoPlaying && !this.board.gameOver) {
+      this.computeAIMove();
+    }
+  }
+
+  computeAIMove() {
+    this.isThinking = true;
+    this.thinkingStartTime = performance.now();
+    
+    // Show thinking overlay for 150ms
+    setTimeout(() => {
+      const result = AI.findBestMove(this.board, this.currentPiece);
+      this.bestMoveInfo = result.bestMove;
+      this.evaluations = result.evaluations;
+      this.isThinking = false;
+
+      if (this.bestMoveInfo) {
+        this.animateAIMove();
+      }
+    }, 150);
+  }
+
+  animateAIMove() {
+    const move = this.bestMoveInfo;
+    const piece = this.currentPiece;
+
+    // Rotate
+    for (let i = 0; i < move.rotations; i++) {
+      this.animation.add(() => piece.rotate(), 60 / this.multiplier);
+    }
+
+    // Move horizontally
+    const deltaX = move.dx;
+    const direction = deltaX > 0 ? 1 : -1;
+    for (let i = 0; i < Math.abs(deltaX); i++) {
+      this.animation.add(() => {
+        if (this.board.isValid(piece, direction, 0)) {
+          piece.x += direction;
+        }
+      }, 40 / this.multiplier);
+    }
+
+    // Pause
+    this.animation.add(() => {}, 200 / this.multiplier);
+
+    // Drop with animation
+    const startY = piece.y;
+    const dropDistance = move.finalY - startY;
+    for (let i = 0; i < dropDistance; i++) {
+      this.animation.add(() => {
+        piece.y++;
+      }, 20 / this.multiplier);
+    }
+
+    // Lock and spawn
+    this.animation.add(() => {
+      this.board.lockPiece(piece);
+      this.spawnPiece();
+    }, 10 / this.multiplier);
+  }
+
+  update(deltaTime) {
+    if (this.board.gameOver) return;
+
+    // Update stats display
+    const stats = this.board.getStats();
+    document.getElementById('piecesSurvived').textContent = stats.piecesSurvived;
+    document.getElementById('avgLines').textContent = stats.avgLines;
+    document.getElementById('timeAlive').textContent = `${stats.timeAlive}s`;
+
+    // Process AI animations
+    this.animation.update(deltaTime);
+
+    // Manual play fallback
+    if (!this.isAutoPlaying && !this.animation.isActive()) {
+      this.accumulator += deltaTime;
+      const stepTime = this.speed / this.multiplier;
+      
+      while (this.accumulator >= stepTime) {
+        if (this.board.isValid(this.currentPiece, 0, 1)) {
+          this.currentPiece.y += 1;
+        } else {
+          this.board.lockPiece(this.currentPiece);
+          this.spawnPiece();
+        }
+        this.accumulator -= stepTime;
+      }
+    }
+  }
+
+  render() {
+    const ctx = this.ctx;
+    const width = COLS * BLOCK_SIZE;
+    const height = ROWS * BLOCK_SIZE;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+
+    // Draw background
+    ctx.fillStyle = '#121212';
+    ctx.fillRect(0, 0, width, height);
+
+    // Draw grid
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= COLS; x++) {
+      ctx.beginPath();
+      ctx.moveTo(x * BLOCK_SIZE, 0);
+      ctx.lineTo(x * BLOCK_SIZE, height);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= ROWS; y++) {
+      ctx.beginPath();
+      ctx.moveTo(0, y * BLOCK_SIZE);
+      ctx.lineTo(width, y * BLOCK_SIZE);
+      ctx.stroke();
+    }
+
+    // Draw locked pieces
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) {
+        const cell = this.board.grid[y][x];
+        if (cell && cell !== 'ghost') {
+          ctx.fillStyle = cell;
+          ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+          ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+        }
+      }
+    }
+
+    // Draw analysis
+    if (this.showAnalysis && this.evaluations.length > 0) {
+      this.evaluations.forEach(evaluation => {
+        const p = evaluation.piece;
+        const shape = p.getCurrentShape();
+        const alpha = Math.max(0.1, Math.min(0.4, (evaluation.score + 20) / 40));
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = '#ffffff';
+        for (let y = 0; y < shape.length; y++) {
+          for (let x = 0; x < shape[y].length; x++) {
+            if (shape[y][x]) {
+              ctx.fillRect(
+                (p.x + x) * BLOCK_SIZE,
+                (p.y + y) * BLOCK_SIZE,
+                BLOCK_SIZE,
+                BLOCK_SIZE
+              );
             }
-            
-            draw() {
-                ctx.save();
-                ctx.translate(this.x + this.size/2, this.y + this.size/2);
-                ctx.rotate(this.rotation * Math.PI / 180);
-                
-                // Draw block based on type
-                ctx.fillStyle = this.color;
-                ctx.shadowColor = this.color;
-                ctx.shadowBlur = 10;
-                
-                switch(this.type.shape) {
-                    case 'square':
-                        ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
-                        break;
-                    case 'rectangle':
-                        ctx.fillRect(-this.size/2, -this.size/3, this.size, this.size*0.66);
-                        break;
-                    case 't-shape':
-                        ctx.fillRect(-this.size/2, -this.size/4, this.size, this.size/2);
-                        ctx.fillRect(-this.size/4, -this.size/2, this.size/2, this.size/2);
-                        break;
-                    case 'l-shape':
-                        ctx.fillRect(-this.size/2, -this.size/2, this.size/3, this.size);
-                        ctx.fillRect(-this.size/2, this.size/2 - this.size/3, this.size, this.size/3);
-                        break;
-                    case 'z-shape':
-                        ctx.fillRect(-this.size/2, -this.size/3, this.size*0.7, this.size/2);
-                        ctx.fillRect(-this.size*0.3, this.size/6, this.size*0.7, this.size/2);
-                        break;
-                    case 's-shape':
-                        ctx.fillRect(-this.size*0.3, -this.size/3, this.size*0.7, this.size/2);
-                        ctx.fillRect(-this.size/2, this.size/6, this.size*0.7, this.size/2);
-                        break;
-                    case 'i-shape':
-                        ctx.fillRect(-this.size/2, -this.size/6, this.size, this.size/3);
-                        break;
-                }
-                
-                ctx.restore();
-            }
+          }
         }
-        
-        // Create a new block
-        function createBlock() {
-            const type = blockTypes[Math.floor(Math.random() * blockTypes.length)];
-            const size = Math.random() * 30 + 20;
-            const x = Math.random() * (canvas.width - size);
-            return new Block(x, -size, type);
-        }
-        
-        // Update game stats display
-        function updateStats() {
-            document.getElementById('score').textContent = gameState.score;
-            document.getElementById('stacked').textContent = gameState.stackedBlocks;
-            document.getElementById('speed').textContent = gameState.speed + 'x';
-        }
-        
-        // Game loop
-        function gameLoop(timestamp) {
-            if (!gameState.lastTime) gameState.lastTime = timestamp;
-            const deltaTime = timestamp - gameState.lastTime;
-            gameState.lastTime = timestamp;
-            
-            // Clear canvas with a semi-transparent overlay for motion blur effect
-            ctx.fillStyle = 'rgba(10, 10, 30, 0.2)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw grid background
-            drawGrid();
-            
-            // Update and draw blocks
-            gameState.blocks.forEach(block => {
-                block.update(deltaTime);
-                block.draw();
-            });
-            
-            // Remove blocks that are off-screen or faded out
-            gameState.blocks = gameState.blocks.filter(block => 
-                block.y < canvas.height && (block.alpha === undefined || block.alpha > 0)
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    // Draw current piece
+    if (this.currentPiece) {
+      const piece = this.currentPiece;
+      const shape = piece.getCurrentShape();
+      
+      // Draw ghost
+      const ghost = piece.clone();
+      while (this.board.isValid(ghost, 0, 1)) {
+        ghost.y++;
+      }
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = piece.color;
+      for (let y = 0; y < shape.length; y++) {
+        for (let x = 0; x < shape[y].length; x++) {
+          if (shape[y][x]) {
+            ctx.fillRect(
+              (ghost.x + x) * BLOCK_SIZE,
+              (ghost.y + y) * BLOCK_SIZE,
+              BLOCK_SIZE,
+              BLOCK_SIZE
             );
-            
-            // Add new blocks periodically
-            if (gameState.isRunning && !gameState.isPaused) {
-                if (timestamp - gameState.lastDropTime > gameState.dropInterval / gameState.speed) {
-                    gameState.blocks.push(createBlock());
-                    gameState.score++;
-                    gameState.lastDropTime = timestamp;
-                    updateStats();
-                }
-            }
-            
-            requestAnimationFrame(gameLoop);
+          }
         }
-        
-        // Draw grid background
-        function drawGrid() {
-            ctx.strokeStyle = 'rgba(100, 100, 150, 0.1)';
-            ctx.lineWidth = 1;
-            
-            // Vertical lines
-            for (let x = 0; x <= canvas.width; x += 30) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, canvas.height);
-                ctx.stroke();
-            }
-            
-            // Horizontal lines
-            for (let y = 0; y <= canvas.height; y += 30) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(canvas.width, y);
-                ctx.stroke();
-            }
+      }
+      ctx.globalAlpha = 1;
+
+      // Draw actual piece
+      ctx.fillStyle = piece.color;
+      for (let y = 0; y < shape.length; y++) {
+        for (let x = 0; x < shape[y].length; x++) {
+          if (shape[y][x]) {
+            ctx.fillRect(
+              (piece.x + x) * BLOCK_SIZE,
+              (piece.y + y) * BLOCK_SIZE,
+              BLOCK_SIZE,
+              BLOCK_SIZE
+            );
+            ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(
+              (piece.x + x) * BLOCK_SIZE,
+              (piece.y + y) * BLOCK_SIZE,
+              BLOCK_SIZE,
+              BLOCK_SIZE
+            );
+          }
         }
-        
-        // Initialize event listeners
-        function initEventListeners() {
-            document.getElementById('start-btn').addEventListener('click', () => {
-                gameState.isRunning = true;
-                gameState.isPaused = false;
-                document.getElementById('start-btn').textContent = 'Resume';
-            })
-            
-            document.getElementById('pause-btn').addEventListener('click', () => {
-                gameState.isPaused = !gameState.isPaused;
-                document.getElementById('pause-btn').textContent = gameState.isPaused ? 'Resume' : 'Pause';
-            });
-            
-            document.getElementById('reset-btn').addEventListener('click', () => {
-                gameState.blocks = [];
-                gameState.score = 0;
-                gameState.stackedBlocks = 0;
-                gameState.speed = 1;
-                updateStats();
-            });
-            
-            // Speed controls with arrow keys
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'ArrowUp') {
-                    gameState.speed = Math.min(5, gameState.speed + 0.5);
-                    updateStats();
-                } else if (e.key === 'ArrowDown') {
-                    gameState.speed = Math.max(0.5, gameState.speed - 0.5);
-                    updateStats();
-                }
-            });
+      }
+    }
+
+    // Draw next piece
+    this.nextCtx.clearRect(0, 0, this.nextCanvas.width, this.nextCanvas.height);
+    if (this.nextPiece) {
+      const piece = this.nextPiece;
+      const shape = piece.getCurrentShape();
+      const offsetX = (4 - shape[0].length) / 2;
+      const offsetY = (4 - shape.length) / 2;
+      this.nextCtx.fillStyle = piece.color;
+      for (let y = 0; y < shape.length; y++) {
+        for (let x = 0; x < shape[y].length; x++) {
+          if (shape[y][x]) {
+            this.nextCtx.fillRect(
+              (offsetX + x) * 20,
+              (offsetY + y) * 20,
+              20,
+              20
+            );
+          }
         }
-        
-        // Start the game
-        initEventListeners();
-        requestAnimationFrame(gameLoop);
-        
-        // Initial block creation
-        setTimeout(() => {
-            gameState.blocks.push(createBlock());
-        }, 500);
-    </script>
+      }
+    }
+
+    // Update score
+    document.getElementById('scoreValue').textContent = this.board.score;
+
+    // Game over
+    if (this.board.gameOver) {
+      ctx.fillStyle = 'rgba(0,0,0,0.85)';
+      ctx.fillRect(0, 0, width, height);
+      ctx.font = 'bold 36px Arial';
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.fillText('GAME OVER', width/2, height/2 - 20);
+      ctx.font = '24px Arial';
+      ctx.fillText(`Final Score: ${this.board.score}`, width/2, height/2 + 20);
+    }
+
+    // AI Thinking indicator
+    if (this.isThinking) {
+      ctx.fillStyle = 'rgba(0,0,0,0.8)';
+      ctx.fillRect(width/2 - 80, height/2 - 30, 160, 60);
+      ctx.font = 'bold 18px Arial';
+      ctx.fillStyle = '#4fc3f7';
+      ctx.textAlign = 'center';
+      ctx.fillText('AI THINKING...', width/2, height/2);
+      ctx.font = '14px Arial';
+      ctx.fillText(`${(performance.now() - this.thinkingStartTime).toFixed(0)}ms`, width/2, height/2 + 25);
+    }
+  }
+
+  loop(timestamp) {
+    if (!this.lastTime) this.lastTime = timestamp;
+    const deltaTime = timestamp - this.lastTime;
+    this.lastTime = timestamp;
+
+    this.update(deltaTime);
+    this.render();
+
+    requestAnimationFrame(this.loop.bind(this));
+  }
+
+  restart() {
+    this.board.reset();
+    this.pieceBag = new PieceBag();
+    this.currentPiece = null;
+    this.nextPiece = this.pieceBag.getNext();
+    this.animation.clear();
+    this.evaluations = [];
+    this.bestMoveInfo = null;
+    this.isThinking = false;
+    this.accumulator = 0;
+    this.spawnPiece();
+  }
+}
+
+// ==================== INIT ====================
+window.addEventListener('load', () => {
+  window.game = new GameController();
+});
+</script>
 </body>
 </html>
